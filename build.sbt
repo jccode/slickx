@@ -52,7 +52,9 @@ lazy val slickCodeGenTask = Def.task {
   val url = "jdbc:h2:mem:sample;INIT=RUNSCRIPT FROM 'slickx-example/src/main/resources/sql/drop-tables.sql'\\;RUNSCRIPT FROM 'slickx-example/src/main/resources/sql/create-tables.sql';"
   val user = "sa"
   val password = ""
-  r.run("slick.codegen.SourceCodeGenerator", cp.files, Array(slickProfile, jdbcDriver, url, dir.getPath, pkg, user, password, "true", "com.github.jccode.slickx.codegen.CodeGenerator"), s.log)
+  val included = ""
+  val excluded = ""
+  r.run("com.github.jccode.slickx.codegen.CodeGenerator", cp.files, Array(slickProfile, jdbcDriver, url, dir.getPath, pkg, user, password, "true", "com.github.jccode.slickx.codegen.CodeGenerator", included, excluded), s.log)
   val outputFile = dir / pkg.replace(".", "/") / "Tables.scala"
   Seq(outputFile)
 }
