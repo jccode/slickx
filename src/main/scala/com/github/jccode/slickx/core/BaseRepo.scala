@@ -15,21 +15,7 @@ import scala.concurrent.Future
   *
   * @author 01372461
   */
-//trait BaseRepo[T <: slick.lifted.AbstractTable[_], Q <: TableQuery[T]] {
-//
-//  def all(): Future[Seq[T#TableElementType]]
-//
-//  def get(id: Int): Future[Option[T#TableElementType]]
-//
-//  def insert(entity: T#TableElementType): Future[Int]
-//
-//  def update(entity: T#TableElementType): Future[Int]
-//
-//  def delete(id: Int): Future[Int]
-//
-//}
-
-trait BaseRepo[E <: BaseEntity, T <: slick.lifted.AbstractTable[E], Q <: TableQuery[T]] {
+trait BaseRepo[E <: BaseEntity] {
 
   def all(): Future[Seq[E]]
 
@@ -43,13 +29,10 @@ trait BaseRepo[E <: BaseEntity, T <: slick.lifted.AbstractTable[E], Q <: TableQu
 
 }
 
-
-// (implicit ev: Q =:= TableQuery[T])
-class AbstractRepo[P <: JdbcProfile, E <: BaseEntity, T <: P#Table[E] with BaseTable, Q <: TableQuery[T]]
-(val dbConfig: DatabaseConfig[P], val elements: Q)
-(implicit createTimeLens: MkFieldLens.Aux[E, TypeCreateTime, Timestamp], updateTimeLens: MkFieldLens.Aux[E, TypeUpdateTime, Timestamp],
- ev: Q =:= TableQuery[T], ev2: E =:= T#TableElementType)
-  extends BaseRepo[E, T, Q] {
+class AbstractRepo[P <: JdbcProfile, E <: BaseEntity, T <: P#API#Table[E] with BaseTable]
+(val dbConfig: DatabaseConfig[P], val elements: TableQuery[T])
+(implicit createTimeLens: MkFieldLens.Aux[E, TypeCreateTime, Timestamp], updateTimeLens: MkFieldLens.Aux[E, TypeUpdateTime, Timestamp])
+  extends BaseRepo[E] with SlickExtOpts {
 
   import dbConfig.profile.api._
 
@@ -61,6 +44,12 @@ class AbstractRepo[P <: JdbcProfile, E <: BaseEntity, T <: P#Table[E] with BaseT
 
   private def returnId = elements returning elements.map(_.id)
 
+  private def now = new Timestamp(System.currentTimeMillis())
+
+  protected def beforeUpdate(entity: E): E = entity.withUpdateTime(now)
+
+  protected def beforeInsert(entity: E): E = entity.withCreateTime(now).withUpdateTime(now)
+
   override def all(): Future[Seq[E]] = db.run(elements.result)
 
   override def get(id: Int): Future[Option[E]] = db.run(byId(id).result.headOption)
@@ -70,13 +59,4 @@ class AbstractRepo[P <: JdbcProfile, E <: BaseEntity, T <: P#Table[E] with BaseT
   override def update(entity: E): Future[Int] = db.run(byId(entity.id).update(beforeUpdate(entity)))
 
   override def delete(id: Int): Future[Int] = db.run(byId(id).delete)
-
-
-  private def now = new Timestamp(System.currentTimeMillis())
-
-  protected def beforeUpdate(entity: E): E = entity.withUpdateTime(now)
-
-  protected def beforeInsert(entity: E): E = entity.withCreateTime(now).withUpdateTime(now)
-
 }
-
