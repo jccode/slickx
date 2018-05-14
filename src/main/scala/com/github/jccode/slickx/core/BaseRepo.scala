@@ -15,15 +15,29 @@ import scala.concurrent.Future
   *
   * @author 01372461
   */
-trait BaseRepo[T <: slick.lifted.AbstractTable[_], Q <: TableQuery[T]] {
+//trait BaseRepo[T <: slick.lifted.AbstractTable[_], Q <: TableQuery[T]] {
+//
+//  def all(): Future[Seq[T#TableElementType]]
+//
+//  def get(id: Int): Future[Option[T#TableElementType]]
+//
+//  def insert(entity: T#TableElementType): Future[Int]
+//
+//  def update(entity: T#TableElementType): Future[Int]
+//
+//  def delete(id: Int): Future[Int]
+//
+//}
 
-  def all(): Future[Seq[T#TableElementType]]
+trait BaseRepo[E <: BaseEntity, T <: slick.lifted.AbstractTable[E], Q <: TableQuery[T]] {
 
-  def get(id: Int): Future[Option[T#TableElementType]]
+  def all(): Future[Seq[E]]
 
-  def insert(entity: T#TableElementType): Future[Int]
+  def get(id: Int): Future[Option[E]]
 
-  def update(entity: T#TableElementType): Future[Int]
+  def insert(entity: E): Future[Int]
+
+  def update(entity: E): Future[Int]
 
   def delete(id: Int): Future[Int]
 
@@ -33,8 +47,9 @@ trait BaseRepo[T <: slick.lifted.AbstractTable[_], Q <: TableQuery[T]] {
 // (implicit ev: Q =:= TableQuery[T])
 class AbstractRepo[P <: JdbcProfile, E <: BaseEntity, T <: P#Table[E] with BaseTable, Q <: TableQuery[T]]
 (val dbConfig: DatabaseConfig[P], val elements: Q)
-(implicit createTimeLens: MkFieldLens.Aux[E, TypeCreateTime, Timestamp], updateTimeLens: MkFieldLens.Aux[E, TypeUpdateTime, Timestamp])
-  extends BaseRepo[T, Q] {
+(implicit createTimeLens: MkFieldLens.Aux[E, TypeCreateTime, Timestamp], updateTimeLens: MkFieldLens.Aux[E, TypeUpdateTime, Timestamp],
+ ev: Q =:= TableQuery[T], ev2: E =:= T#TableElementType)
+  extends BaseRepo[E, T, Q] {
 
   import dbConfig.profile.api._
 
