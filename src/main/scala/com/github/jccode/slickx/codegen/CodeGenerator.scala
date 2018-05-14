@@ -21,7 +21,7 @@ import StringExt.stringExt
   */
 class CodeGenerator(model: Model) extends SourceCodeGenerator(model) {
 
-  val customImports = "import com.github.jccode.slickx.core._\n"
+  def customImports = "import com.github.jccode.slickx.core._\n"
 
   override def entityName: String => String = (dbName: String) => dbName.toCamelCase
 
