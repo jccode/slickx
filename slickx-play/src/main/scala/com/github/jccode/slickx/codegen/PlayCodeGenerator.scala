@@ -23,11 +23,7 @@ class PlayCodeGenerator(model: Model) extends CodeGenerator(model) {
 
       override def code: String =
         super.code + "\n" +
-        s"""
-          |object $name {
-          |  implicit val ${name.uncapitalize}Format: OFormat[$name] = Json.format[$name]
-          |}
-        """.stripMargin
+        s"""object $name { implicit val ${name.uncapitalize}Format: OFormat[$name] = Json.format[$name]}"""
     }
 
     override def TableClass = new TableClassDef {
@@ -37,5 +33,7 @@ class PlayCodeGenerator(model: Model) extends CodeGenerator(model) {
     override def TableValue = new TableValueDef {
       override def rawName: String = model.name.table.toCamelCase.uncapitalize.toPlural
     }
+
+    override def factory: String = if(columns.size == 1) TableClass.elementType else s"(${TableClass.elementType}.apply _).tupled"
   }
 }
